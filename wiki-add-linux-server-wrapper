@@ -1,0 +1,28 @@
+#!/bin/bash
+#
+# Wrapper for https://github.com/maciejkorzen/misc-perl/blob/master/wiki-add-linux-server.
+# It sets required environmental variables, runs linux-dump-runtime-data, etc..
+#
+# -- 
+# Maciej Korzen
+# maciek@korzen.org, mkorzen@gmail.com
+# http://www.korzen.org/
+
+export WIKIURL=https://wiki.mycompany.lan/api.php
+export WIKILOGIN=wiki-user-login
+export WIKIPASS=myPassw0rd
+export WIKIDOMAIN=wiki-login-domain
+
+if [ -z "$1" ]; then
+	echo "Usage: $(basename $0) address"
+	exit 1
+fi
+
+srv=$1
+
+tmpfile=$(mktemp --tmpdir=$(pwd))
+export SSH_COPY_AND_RUN_NO_PSEUDOTTY="true"
+ssh-copy-and-run "$srv" /CHANGE-ME/linux-dump-runtime-data > $tmpfile
+remoteName=$(ssh-run-command $srv "hostname -f")
+perl -CS wiki-add-linux-server $remoteName $tmpfile
+rm $tmpfile
