@@ -1,0 +1,134 @@
+#!/usr/bin/perl -T
+
+# Uploads file (using SSH) to predefined server to a direcotry reachable
+# from web (HTTP/HTTPS for example) and prints URL to uploaded file.
+# Generated URL has random string added.
+# This is simple version of Dropbox-like file sharing feature.
+# Requires: apg, rsync, ssh
+#
+# Maciej Korzen <maciek@korzen.org>
+# 2012.12.01
+
+use strict;
+use warnings;
+use Getopt::Std;
+use File::Basename;
+
+my $myname = basename($0);
+my $profile = "NONE";
+my $dir;
+my $host;
+my $port;
+my $login;
+my $url;
+
+$ENV{'LANG'} = 'C';
+$ENV{'LC_ALL'} = 'C';
+$ENV{'PATH'} = "/bin:/usr/bin:/usr/local/bin";
+
+my %profiles = 
+(
+    'work' =>  {
+                       'host' => 'server1.company.net',
+                       'port' => '5645',
+                       'dir' => '/var/www/vhosts/server1.company.net/httpdocs/s',
+                       'login' => 'user1one',
+		       'url' => 'https://www.server1.company.net/s'
+                   },
+    'prv'   =>  {
+                       'host' => 'server2.private.com',
+                       'port' => '4343',
+                       'dir' => '/var/www/server2.private.com/s',
+                       'login' => 'lisabeth',
+		       'url' => 'https://www.salander.com/s'
+                   }
+);
+
+sub blad
+{
+	print STDERR $_[0] . "\n";
+	exit(1);
+}
+
+sub usage
+{
+	print "Usage: " . $myname . " -p profile file1 [file2 [file3] ... [fileN]]\n"
+}
+
+sub processArgs
+{
+	my %options=();
+	if (!getopts("p:", \%options))
+	{
+		usage();
+		exit(1);
+	}
+
+	if (defined($options{p}))
+	{
+		$profile  = $options{p};
+	}
+
+	if (defined $options{h})
+	{
+		usage();
+		exit(1);
+	}
+}
+
+sub obsluzPlik
+{
+	print "handling file '" . $_[0] . "'\n";
+	my $randomString = generateRandomString();
+	$randomString =~ /(.*)/;
+	$randomString = $1;
+	my $filesystemPath = $dir . "/" . $randomString;
+	print "creating temporary directory '" . $filesystemPath . "'\n";
+	my $cmd = "/usr/bin/ssh -p " . $port . " " . $login . "@" . $host . " \"mkdir \\\"" . $filesystemPath . "\\\"; chmod a+rx \\\"" . $filesystemPath . "\\\"\"";
+	system($cmd) and die "Can't run command '" . $cmd . "'";
+	print "uploading file\n\n";
+	my $file = $_[0];
+	$file =~ /(.*)/;
+	$file = $1;
+	$cmd = "/usr/bin/rsync -a -z --progress --rsh=\"ssh -p " . $port . "\" \"" . $file . "\" \"" . $login . "@" . $host . ":$filesystemPath\"";
+	system($cmd) and die "Error while uploading file";
+	$cmd = "/usr/bin/ssh -p " . $port . " " . $login . "@" . $host . " \"chmod -R a+r \\\"" . $filesystemPath . "\\\"; chmod a+rx \\\"" . $filesystemPath . "\\\"\"";
+	system($cmd) and die "Error while chmod";
+	print "\nURL: " . $url . "/" . $randomString2 . "/" . basename($file) . "\n\n";
+}
+
+sub generateRandomString
+{
+	open(APG, "/usr/bin/apg -m 20 -n 1 -M LCN|") or die "Can't find 'apg'";
+	my $out = <APG>;
+	chomp($out);
+	close(APG);
+	return($out);
+}
+
+processArgs();
+if (($#ARGV < 0) || ($profile eq "NONE"))
+{
+	usage();
+	exit(1);
+}
+
+if (!defined($profiles{$profile}))
+{
+	die "No such profile '" . $profile . "'";
+}
+
+print "profile '" . $profile . "'\n";
+
+$host = $profiles{$profile}{host};
+$port = $profiles{$profile}{port};
+$dir = $profiles{$profile}{dir};
+$login = $profiles{$profile}{login};
+$url = $profiles{$profile}{url};
+
+while (my $arg = shift(@ARGV))
+{
+	obsluzPlik($arg);
+}
+
+exit(0);

@@ -1,0 +1,133 @@
+#!/bin/sh
+
+### AUTHOR 
+# Maciej Korzen
+# maciek@korzen.org, mkorzen@gmail.com
+# http://www.korzen.org/
+
+export LANG=C LC_ALL=C
+
+/bin/echo -e "== date =="
+date
+/bin/echo -e "\n== hostname -f =="
+hostname -f
+/bin/echo -e "\n== uptime =="
+uptime
+/bin/echo -e "\n== uname -a =="
+uname -a
+/bin/echo -e "\n== lsmod =="
+lsmod
+/bin/echo -e "\n== sysctl -a =="
+sysctl -a | sort -n
+if which lscpu >/dev/null 2>&1; then
+	/bin/echo -e "\n== lscpu =="
+	lscpu
+fi
+/bin/echo -e "\n== /proc/cpuinfo =="
+cat /proc/cpuinfo
+/bin/echo -e "\n== free -m =="
+free -m
+/bin/echo -e "\n== ip l =="
+ip l
+/bin/echo -e "\n== ip a =="
+ip a
+/bin/echo -e "\n== ip r =="
+ip r
+/bin/echo -e "\n== ip rule =="
+ip rule
+/bin/echo -e "\n== ip route show table all =="
+ip route show table all
+/bin/echo -e "\n== iptables-save =="
+iptables-save
+if which netstat >/dev/null; then
+	/bin/echo -e "\n== netstat -ltpn =="
+	netstat -ltpn
+	/bin/echo -e "\n== netstat -lupn =="
+	netstat -lupn
+fi
+if which ss >/dev/null; then
+	/bin/echo -e "\n== ss -ltpn =="
+	ss -ltpn | cat
+	/bin/echo -e "\n== ss -lupn =="
+	ss -lupn | cat
+	/bin/echo -e "\n== ss -atpn =="
+	ss -atpn | cat
+	/bin/echo -e "\n== ss -aupn =="
+	ss -aupn | cat
+fi
+[ -e /usr/bin/dpkg ] && (
+	/bin/echo -e "\n== dpkg -l =="
+	dpkg -l
+)
+[ -e /bin/rpm ] && (
+	/bin/echo -e "\n== rpm -qa =="
+	rpm -qa | sort
+)
+if which chkconfig >/dev/null 2>&1; then
+	/bin/echo -e "\n== chkconfig --list =="
+	chkconfig --list
+fi
+/bin/echo -e "\n== ps auxwww =="
+ps auxwww
+/bin/echo -e "\n== /etc/fstab =="
+cat /etc/fstab
+/bin/echo -e "\n== mount =="
+mount
+/bin/echo -e "\n== df -h =="
+df -h
+/bin/echo -e "\n== ls -lR /dev/disk =="
+/bin/ls -lR /dev/disk
+if [ -e /proc/mdstat ]; then
+	/bin/echo -e "\n== /proc/mdstat =="
+	cat /proc/mdstat
+fi
+if [ -e /usr/sbin/lvdisplay ]; then
+	/bin/echo -e "\n== pvdisplay =="
+	pvdisplay
+	/bin/echo -e "\n== vgdisplay =="
+	vgdisplay
+	/bin/echo -e "\n== lvdisplay =="
+	lvdisplay
+fi
+/bin/echo -e "\n== /proc/partitions =="
+cat /proc/partitions
+if which iscsiadm >/dev/null 2>&1; then
+	/bin/echo -e "\n== iscsiadm -m discovery =="
+	iscsiadm -m discovery | sort -n
+	/bin/echo -e "\n== iscsiadm -m node =="
+	iscsiadm -m node | sort -n
+	/bin/echo -e "\n== iscsiadm -m session =="
+	iscsiadm -m session | sort -n
+fi
+if which blkid >/dev/null 2>&1; then
+	/bin/echo -e "\n== blkid =="
+	blkid
+fi
+if which lsscsi >/dev/null 2>&1; then
+	/bin/echo -e "\n== lsscsi =="
+	lsscsi -g
+fi
+if which lsusb >/dev/null 2>&1; then
+	/bin/echo -e "\n== lsusb =="
+	lsusb
+fi
+if which lspci >/dev/null 2>&1; then
+	/bin/echo -e "\n== lspci =="
+	lspci
+fi
+if which lsblk >/dev/null 2>&1; then
+	/bin/echo -e "\n== lsblk =="
+	lsblk -ai
+fi
+if which dmidecode >/dev/null 2>&1; then
+	/bin/echo -e "\n== dmidecode =="
+	dmidecode
+fi
+if which lshal >/dev/null 2>&1; then
+	/bin/echo -e "\n== lshal =="
+	lshal
+fi
+if [ -e /opt/dell/srvadmin/bin/omreport ]; then
+	/bin/echo -e "\n== omreport system summary =="
+	/opt/dell/srvadmin/bin/omreport system summary
+fi

@@ -1,0 +1,23 @@
+#!/bin/sh
+#
+# This script is a wrapper for "ssh-copy-and-run", but invokes only one command.
+#
+# -- 
+# Maciej Korzen
+# maciek@korzen.org, mkorzen@gmail.com
+# http://www.korzen.org/
+
+if [ -z "$2" ]; then
+	echo "Usage: $(basename $0) ADDRESS COMMAND [ARGS ...]" >&2
+	exit 1
+fi
+
+address=$1
+shift
+
+tmpFile=$(mktemp)
+echo "$@" > $tmpFile
+tmpDir=$(dirname $tmpFile)
+cd "$tmpDir"
+ssh-copy-and-run $address $(basename $tmpFile)
+rm $tmpFile

@@ -1,0 +1,51 @@
+#!/bin/sh
+#
+# This script will copy all given files and directories to remote server
+# and execute first file.
+#
+# -- 
+# Maciej Korzen
+# maciek@korzen.org, mkorzen@gmail.com
+# http://www.korzen.org/
+
+export LC_ALL=C LANG=C
+
+if [ -z "$2" ]; then
+	echo "Usage: $(basename $0) [user@]address[:port] file1 [filen ...]"
+	exit 1
+fi
+
+aport=$(echo $1: | cut -d : -f 2)
+if [ -n "$aport" ]; then
+	port="$aport"
+else
+	port="22"
+fi
+
+user="root"
+if echo $1 | fgrep @ >/dev/null; then
+	user=$(echo $1 | sed 's,@.*,,')
+fi
+
+srv=$(echo $1 | cut -d : -f 1 | sed 's,.*@,,')
+
+shift
+
+remoteTmp=$(ssh -q -p $port "${user}@$srv" "mktemp -d")
+
+if [ -z "$remoteTmp" ]; then
+	echo "Error creating temporary dir at remote server!" >&2
+	exit 1
+fi
+
+sshArgs="-t"
+
+# Set environment variable SSH_COPY_AND_RUN_NO_PSEUDOTTY to "true" to
+# disable pseudo TTY (-t).
+if [ "$SSH_COPY_AND_RUN_NO_PSEUDOTTY" = "true" ]; then
+	sshArgs=""
+fi
+
+tar -mzc $* | ssh -q -p $port "${user}@$srv" "cd \"$remoteTmp\"; tar -zmx"
+ssh -q -p $port $sshArgs "${user}@$srv" "cd \"$remoteTmp\"; chmod 700 ./$1; ./$1"
+ssh -q -p $port "${user}@$srv" "rm -rf \"$remoteTmp\""
