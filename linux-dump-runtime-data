@@ -127,6 +127,10 @@ if which lshal >/dev/null 2>&1; then
 	/bin/echo -e "\n== lshal =="
 	lshal
 fi
+if which lshw >/dev/null 2>&1; then
+	/bin/echo -e "\n== lshw =="
+	lshw -quiet
+fi
 if [ -e /opt/dell/srvadmin/bin/omreport ]; then
 	/bin/echo -e "\n== omreport system summary =="
 	/opt/dell/srvadmin/bin/omreport system summary
