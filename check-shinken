@@ -1,0 +1,78 @@
+#!/bin/sh
+
+##### DESCRIPTION ###########################################################
+# Wrapper to check_shinken.py that checks status of all Shinken daemons.
+#
+##### USAGE #################################################################
+# It may require to be run as root. You can use sudo to invoke it as
+# unpriviledged user.
+#
+# /etc/sudoers example:
+# shinken ALL=(root) NOPASSWD: /usr/local/bin/check-shinken
+#
+# If you know better way to invoke this script as unpriviledged - let me
+# know. :-)
+#
+##### LICENSE ###############################################################
+# Copyright 2013 Maciej Korzen
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 dated June, 1991.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
+# USA
+#
+##### AUTHOR ################################################################
+# Maciej Korzen
+# maciek@korzen.org, mkorzen@gmail.com
+# http://www.korzen.org/
+
+_end=0
+_endstring=""
+_errstring=""
+_retstring=""
+
+export PYTHONPATH=$PYTHONPATH:/usr/local/shinken/
+
+for i in scheduler poller reactionner broker arbiter; do
+	_retstring=$(/usr/local/shinken/libexec/check_shinken.py -a localhost -t $i 2>&1)
+	_ret=$?
+	if [ "$_ret" != "0" ]; then
+		if [ "$_errstring" = "" ]; then
+			_errstring="${_retstring}"
+		else
+			_errstring="${_errstring}; ${_retstring}"
+		fi
+		if [ "$_end" = "0" ]; then
+			_end=1
+		else
+			_end=2
+			break
+		fi
+	else
+		if [ "$_endstring" = "" ]; then
+			_endstring="${_retstring}"
+		else
+			_endstring="${_endstring}; ${_retstring}"
+		fi
+	fi
+done
+
+if [ "$_end" = "2" ]; then
+	echo "CRITICAL! $_errstring"
+elif [ "$_end" = "1" ]; then
+	echo "Warning! $_errstring"
+else
+	echo "OK. $_endstring"
+fi
+
+exit $_end
+
