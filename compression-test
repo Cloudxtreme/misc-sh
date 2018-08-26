@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# Simple script to test compression programs and levels of compression.
+
+# Programs and levels used:
+# xz: 0 .. 9
+# gzip: 1 .. 9
+# bzip2: 1 .. 9
+# lz4: 1 .. 9
+
+echo -n > compression-test-results
+
+for prog in xz gzip bzip2 lz4; do
+	levelStart=1
+	levelStop=9
+	if [ "$prog" = "xz" ]; then
+		levelStart=0
+	fi
+	for level in $(seq $levelStart $levelStop); do
+		echo "=== $prog - $level ==="
+		epochStart=$(date +%s)
+		pv big_file_1.sql | $prog -${level} > compression-test-out
+		epochEnd=$(date +%s)
+		elapsedSeconds=$[$epochEnd - $epochStart]
+		sizeAfterCompression=$(stat compression-test-out | fgrep ' Size: ' | awk '{ print $2; }')
+		echo "${prog},${level},${elapsedSeconds},${sizeAfterCompression}" >> compression-test-results
+		rm compression-test-out
+		echo
+	done
+done
